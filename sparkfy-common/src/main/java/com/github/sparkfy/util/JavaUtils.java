@@ -68,4 +68,12 @@ public class JavaUtils {
             throw new NumberFormatException(timeError + "\n" + e.getMessage());
         }
     }
+
+    /**
+     * Convert a time parameter such as (50s, 100ms, or 250us) to seconds for internal use. If
+     * no suffix is provided, the passed number is assumed to be in seconds.
+     */
+    public static long timeStringAsSec(String str) {
+        return parseTimeString(str, TimeUnit.SECONDS);
+    }
 }

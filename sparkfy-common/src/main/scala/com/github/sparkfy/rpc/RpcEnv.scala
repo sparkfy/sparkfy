@@ -3,9 +3,11 @@ package com.github.sparkfy.rpc
 import java.util.concurrent.TimeoutException
 
 
+import com.github.sparkfy.util.Utils
 
 import scala.concurrent.{Await, Awaitable}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
  * Created by huangyu on 15/10/11.
@@ -16,9 +18,9 @@ object RpcEnv {
 
 
 case class RpcEnvConfig(conf: Map[String, String],
-                                        name: String,
-                                        host: String,
-                                        port: Int)
+                        name: String,
+                        host: String,
+                        port: Int)
 
 /**
  * Represents a host and port.
@@ -85,7 +87,7 @@ class RpcTimeout(val duration: FiniteDuration, val timeoutProp: String)
   }
 }
 
-object SparkTimeout{
+object SparkTimeout {
   /**
    * Lookup prioritized list of timeout properties in the configuration
    * and create a RpcTimeout with the first set property key in the
@@ -95,18 +97,20 @@ object SparkTimeout{
    * @param timeoutPropList prioritized list of property keys for the timeout in seconds
    * @param defaultValue default timeout value in seconds if no properties found
    */
-  def apply(conf: Map[String,String], timeoutPropList: Seq[String], defaultValue: String): RpcTimeout = {
+  def apply(conf: Map[String, String], timeoutPropList: Seq[String], defaultValue: String): RpcTimeout = {
     require(timeoutPropList.nonEmpty)
 
     // Find the first set property or use the default value with the first property
     val itr = timeoutPropList.iterator
     var foundProp: Option[(String, String)] = None
-    while (itr.hasNext && foundProp.isEmpty){
+    while (itr.hasNext && foundProp.isEmpty) {
       val propKey = itr.next()
       conf.get(propKey).foreach { prop => foundProp = Some(propKey, prop) }
     }
     val finalProp = foundProp.getOrElse(timeoutPropList.head, defaultValue)
-    val timeout = { Utils.timeStringAsSeconds(finalProp._2) seconds }
+    val timeout = {
+      Utils.timeStringAsSeconds(finalProp._2) seconds
+    }
     new RpcTimeout(timeout, finalProp._1)
   }
 }

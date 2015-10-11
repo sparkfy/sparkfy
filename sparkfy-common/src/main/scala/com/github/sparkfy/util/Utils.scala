@@ -36,4 +36,12 @@ object Utils {
     }
   }
 
+  /**
+   * Convert a time parameter such as (50s, 100ms, or 250us) to microseconds for internal use. If
+   * no suffix is provided, the passed number is assumed to be in seconds.
+   */
+  def timeStringAsSeconds(str: String): Long = {
+    JavaUtils.timeStringAsSec(str)
+  }
+
 }
