@@ -3,7 +3,7 @@ package com.github.sparkfy.rpc
 import java.util.concurrent.TimeoutException
 
 
-import com.github.sparkfy.util.Utils
+import com.github.sparkfy.util.{RpcUtils, Utils}
 
 import scala.concurrent.{Await, Awaitable}
 import scala.concurrent.duration.FiniteDuration
@@ -16,6 +16,10 @@ object RpcEnv {
 
 }
 
+
+abstract class RpcEnv(conf: Map[String, String]) {
+  val defaultLookupTimeout = RpcUtils.lookupRpcTimeout(conf)
+}
 
 case class RpcEnvConfig(conf: Map[String, String],
                         name: String,
@@ -87,7 +91,7 @@ class RpcTimeout(val duration: FiniteDuration, val timeoutProp: String)
   }
 }
 
-object SparkTimeout {
+object RpcTimeout {
   /**
    * Lookup prioritized list of timeout properties in the configuration
    * and create a RpcTimeout with the first set property key in the
