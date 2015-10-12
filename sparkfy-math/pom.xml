@@ -18,6 +18,10 @@
             <artifactId>breeze_2.10</artifactId>
             <version>0.11.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.sparkfy</groupId>
+            <artifactId>sparkfy-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

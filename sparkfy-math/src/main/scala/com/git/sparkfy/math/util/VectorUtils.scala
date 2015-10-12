@@ -1,7 +1,13 @@
 package com.git.sparkfy.math.util
 
+import java.io.File
+
 import com.git.sparkfy.math.linalg.VectorType.VectorType
 import com.git.sparkfy.math.linalg.{DenseVector, MapVector, SparseVector, Vector, VectorType}
+import com.github.sparkfy.util.AvroUtils
+import org.apache.avro.file.DataFileReader
+import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
+import org.apache.avro.io.DatumReader
 
 import scala.io.Source
 
@@ -140,7 +146,25 @@ object VectorUtils {
         throw new IllegalArgumentException("Unknow vector:" + vector.getClass + "!")
     }
 
-
   }
+
+  def readAvro2VectorAddition(path: String, vector: Vector): Double = {
+    var addition: Double = 0.0
+    val file = new File(path)
+    val reader: DatumReader[GenericRecord] = new GenericDatumReader[GenericRecord]()
+    val dataFileReader = new DataFileReader[GenericRecord](file, reader)
+    while (dataFileReader.hasNext) {
+      val record = dataFileReader.next()
+      val index = AvroUtils.getIntAvro(record, "index", false)
+      val value = AvroUtils.getDoubleAvro(record, "value", false)
+      if (index >= 0) {
+        vector(index) = value
+      } else if (index == -1) {
+        addition = value
+      }
+    }
+    addition
+  }
+
 
 }

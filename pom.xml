@@ -17,6 +17,23 @@
         <scala.version>2.10.4</scala.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- our modules -->
+            <dependency>
+                <artifactId>sparkfy-common</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <artifactId>sparkfy-math</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>net.sf.json-lib</groupId>
@@ -60,6 +77,11 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>2.10.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.7.7</version>
         </dependency>
     </dependencies>
     <build>
