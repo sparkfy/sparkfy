@@ -3,9 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.sparkfy</groupId>
     <artifactId>sparkfy-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <modules>
         <module>sparkfy-common</module>
+        <module>sparkfy-math</module>
     </modules>
     <packaging>pom</packaging>
 

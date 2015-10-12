@@ -24,7 +24,7 @@ object RpcUtils {
   }
 
   /** Returns the default Spark timeout to use for RPC ask operations. */
-  private[spark] def askRpcTimeout(conf: Map[String, String]): RpcTimeout = {
+  def askRpcTimeout(conf: Map[String, String]): RpcTimeout = {
     RpcTimeout(conf, Seq("rpc.askTimeout", "network.timeout"), "120s")
   }
 
