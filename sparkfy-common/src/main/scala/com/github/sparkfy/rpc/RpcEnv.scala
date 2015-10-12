@@ -2,12 +2,10 @@ package com.github.sparkfy.rpc
 
 import java.util.concurrent.TimeoutException
 
-
 import com.github.sparkfy.util.{RpcUtils, Utils}
 
-import scala.concurrent.{Await, Awaitable}
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration._
+import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.{Await, Awaitable, Future}
 
 /**
  * Created by huangyu on 15/10/11.
@@ -19,6 +17,86 @@ object RpcEnv {
 
 abstract class RpcEnv(conf: Map[String, String]) {
   val defaultLookupTimeout = RpcUtils.lookupRpcTimeout(conf)
+
+  /**
+   * Return RpcEndpointRef of the registered [[RpcEndpoint]]. Will be used to implement
+   * [[RpcEndpoint.self]]. Return `null` if the corresponding [[RpcEndpointRef]] does not exist.
+   */
+  private[rpc] def endpointRef(endpoint: RpcEndpoint): RpcEndpointRef
+
+  /**
+   * Return the address that [[RpcEnv]] is listening to.
+   */
+  def address: RpcAddress
+
+  /**
+   * Register a [[RpcEndpoint]] with a name and return its [[RpcEndpointRef]]. [[RpcEnv]] does not
+   * guarantee thread-safety.
+   */
+  def setupEndpoint(name: String, endpoint: RpcEndpoint): RpcEndpointRef
+
+  /**
+   * Retrieve the [[RpcEndpointRef]] represented by `uri` asynchronously.
+   */
+  def asyncSetupEndpointRefByURI(uri: String): Future[RpcEndpointRef]
+
+  /**
+   * Retrieve the [[RpcEndpointRef]] represented by `uri`. This is a blocking action.
+   */
+  def setupEndpointRefByURI(uri: String): RpcEndpointRef = {
+    defaultLookupTimeout.awaitResult(asyncSetupEndpointRefByURI(uri))
+  }
+
+  /**
+   * Retrieve the [[RpcEndpointRef]] represented by `systemName`, `address` and `endpointName`
+   * asynchronously.
+   */
+  def asyncSetupEndpointRef(
+                             systemName: String, address: RpcAddress, endpointName: String): Future[RpcEndpointRef] = {
+    asyncSetupEndpointRefByURI(uriOf(systemName, address, endpointName))
+  }
+
+
+  /**
+   * Retrieve the [[RpcEndpointRef]] represented by `systemName`, `address` and `endpointName`.
+   * This is a blocking action.
+   */
+  def setupEndpointRef(
+                        systemName: String, address: RpcAddress, endpointName: String): RpcEndpointRef = {
+    setupEndpointRefByURI(uriOf(systemName, address, endpointName))
+  }
+
+  /**
+   * Stop [[RpcEndpoint]] specified by `endpoint`.
+   */
+  def stop(endpoint: RpcEndpointRef): Unit
+
+  /**
+   * Shutdown this [[RpcEnv]] asynchronously. If need to make sure [[RpcEnv]] exits successfully,
+   * call [[awaitTermination()]] straight after [[shutdown()]].
+   */
+  def shutdown(): Unit
+
+  /**
+   * Wait until [[RpcEnv]] exits.
+   *
+   * TODO do we need a timeout parameter?
+   */
+  def awaitTermination(): Unit
+
+
+  /**
+   * Create a URI used to create a [[RpcEndpointRef]]. Use this one to create the URI instead of
+   * creating it manually because different [[RpcEnv]] may have different formats.
+   */
+  def uriOf(systemName: String, address: RpcAddress, endpointName: String): String
+
+  /**
+   * [[RpcEndpointRef]] cannot be deserialized without [[RpcEnv]]. So when deserializing any object
+   * that contains [[RpcEndpointRef]]s, the deserialization codes should be wrapped by this method.
+   */
+  def deserialize[T](deserializationAction: () => T): T
+
 }
 
 case class RpcEnvConfig(conf: Map[String, String],

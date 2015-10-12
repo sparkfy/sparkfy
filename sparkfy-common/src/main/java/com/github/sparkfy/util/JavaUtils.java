@@ -76,4 +76,13 @@ public class JavaUtils {
     public static long timeStringAsSec(String str) {
         return parseTimeString(str, TimeUnit.SECONDS);
     }
+
+
+    /**
+     * Convert a time parameter such as (50s, 100ms, or 250us) to milliseconds for internal use. If
+     * no suffix is provided, the passed number is assumed to be in ms.
+     */
+    public static long timeStringAsMs(String str) {
+        return parseTimeString(str, TimeUnit.MILLISECONDS);
+    }
 }

@@ -36,6 +36,15 @@ object Utils {
     }
   }
 
+
+  /**
+   * Convert a time parameter such as (50s, 100ms, or 250us) to microseconds for internal use. If
+   * no suffix is provided, the passed number is assumed to be in ms.
+   */
+  def timeStringAsMs(str: String): Long = {
+    JavaUtils.timeStringAsMs(str)
+  }
+
   /**
    * Convert a time parameter such as (50s, 100ms, or 250us) to microseconds for internal use. If
    * no suffix is provided, the passed number is assumed to be in seconds.
@@ -44,4 +53,24 @@ object Utils {
     JavaUtils.timeStringAsSec(str)
   }
 
+  /**
+   * Get the ClassLoader which loaded Spark.
+   */
+  def getClassLoader: ClassLoader = getClass.getClassLoader
+
+  /**
+   * Get the Context ClassLoader on this thread or, if not present, the ClassLoader that
+   * loaded Spark.
+   *
+   * This should be used whenever passing a ClassLoader to Class.ForName or finding the currently
+   * active loader when setting up ClassLoader delegation chains.
+   */
+  def getContextOrClassLoader: ClassLoader =
+    Option(Thread.currentThread().getContextClassLoader).getOrElse(getClassLoader)
+
+  /** Preferred alternative to Class.forName(className) */
+  def classForName(className: String): Class[_] = {
+    Class.forName(className, true, getContextOrClassLoader)
+    // scalastyle:on classforname
+  }
 }
