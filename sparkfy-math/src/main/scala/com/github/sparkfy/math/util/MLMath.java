@@ -1,4 +1,4 @@
-package com.git.sparkfy.math.util;
+package com.github.sparkfy.math.util;
 
 /**
  * Created by huangyu on 15/8/17.

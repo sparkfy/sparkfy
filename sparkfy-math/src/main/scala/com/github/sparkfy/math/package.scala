@@ -1,4 +1,4 @@
-package com.git.sparkfy
+package com.github.sparkfy
 
 /**
  * Created by yellowhuang on 2015/10/12.

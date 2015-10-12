@@ -1,4 +1,4 @@
-package com.git.sparkfy.math.linalg
+package com.github.sparkfy.math.linalg
 
 import com.github.fommil.netlib.{BLAS => NetlibBLAS, F2jBLAS}
 import com.github.fommil.netlib.BLAS.{getInstance => NativeBLAS}

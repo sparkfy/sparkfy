@@ -1,9 +1,11 @@
-package com.git.sparkfy.math.util
+package com.github.sparkfy.math.util
 
 import java.io.File
 
-import com.git.sparkfy.math.linalg.VectorType.VectorType
-import com.git.sparkfy.math.linalg.{DenseVector, MapVector, SparseVector, Vector, VectorType}
+import com.github.sparkfy.math.linalg.Vector
+import com.github.sparkfy.math.linalg.{MapVector, SparseVector, DenseVector, VectorType}
+import VectorType.VectorType
+import com.github.sparkfy.math.linalg.MapVector
 import com.github.sparkfy.util.AvroUtils
 import org.apache.avro.file.DataFileReader
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}

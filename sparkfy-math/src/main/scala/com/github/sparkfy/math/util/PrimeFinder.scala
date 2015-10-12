@@ -1,4 +1,4 @@
-package com.git.sparkfy.math.util
+package com.github.sparkfy.math.util
 
 import java.util
 

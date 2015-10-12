@@ -1,9 +1,10 @@
-package com.git.sparkfy.math.linalg
+package com.github.sparkfy.math.linalg
 
 import java.io.PrintWriter
 import java.util
 
-import com.git.sparkfy.math.util.{HashFunctions, PrimeFinder, VectorUtils}
+import com.github.sparkfy.math.util.PrimeFinder
+import com.github.sparkfy.math.util.{HashFunctions, PrimeFinder, VectorUtils}
 
 import scala.util.Random
 
