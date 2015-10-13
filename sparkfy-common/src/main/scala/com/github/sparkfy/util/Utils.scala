@@ -1,6 +1,13 @@
 package com.github.sparkfy.util
 
+import java.io.{InputStream, IOException}
+import java.util.Properties
+
 import com.github.sparkfy.SparkfyException
+
+import scala.collection.mutable
+import scala.util.control.NonFatal
+import scala.collection.JavaConverters._
 
 /**
  * Created by huangyu on 15/10/11.
@@ -20,7 +27,7 @@ object Utils {
       val uri = new java.net.URI(sparkUrl)
       val host = uri.getHost
       val port = uri.getPort
-      if (uri.getScheme != "sparkfy" ||
+      if (uri.getScheme != "com" ||
         host == null ||
         port < 0 ||
         (uri.getPath != null && !uri.getPath.isEmpty) || // uri.getPath returns "" instead of null
@@ -72,5 +79,30 @@ object Utils {
   def classForName(className: String): Class[_] = {
     Class.forName(className, true, getContextOrClassLoader)
     // scalastyle:on classforname
+  }
+
+  /**
+   * Execute a block of code that evaluates to Unit, re-throwing any non-fatal uncaught
+   * exceptions as IOException.  This is used when implementing Externalizable and Serializable's
+   * read and write methods, since Java's serializer will not report non-IOExceptions properly;
+   * see SPARK-4080 for more context.
+   */
+  def tryOrIOException(block: => Unit) {
+    try {
+      block
+    } catch {
+      case e: IOException => throw e
+      case NonFatal(t) => throw new IOException(t)
+    }
+  }
+
+ def loadConfFile(confInputStream: InputStream): Map[String, String] = {
+    val setting: mutable.Map[String, String] = new mutable.HashMap[String, String]()
+    val prop = new Properties()
+    prop.load(confInputStream)
+    for (key <- prop.stringPropertyNames().asScala) {
+      setting.getOrElseUpdate(key, prop.getProperty(key))
+    }
+    setting.toMap
   }
 }
