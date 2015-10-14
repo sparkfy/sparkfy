@@ -128,6 +128,9 @@ class JavaSerializer(conf: Map[String, String]) extends Serializer with External
 
   private var counterReset = conf.getInt("serializer.objectStreamReset", 100)
 
+
+  protected def this() = this(Map[String, String]()) // For deserialization only
+
   override def newInstance(): SerializerInstance = {
     val classLoader = defaultClassLoader.getOrElse(Thread.currentThread.getContextClassLoader)
     new JavaSerializerInstance(counterReset, classLoader)

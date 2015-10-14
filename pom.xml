@@ -15,6 +15,8 @@
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <scala.version>2.10.4</scala.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <chill.version>0.5.0</chill.version>
     </properties>
 
     <dependencyManagement>
@@ -30,6 +32,36 @@
                 <artifactId>sparkfy-math</artifactId>
                 <groupId>${project.groupId}</groupId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.twitter</groupId>
+                <artifactId>chill_${scala.binary.version}</artifactId>
+                <version>${chill.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-commons</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.twitter</groupId>
+                <artifactId>chill-java</artifactId>
+                <version>${chill.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-commons</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -76,7 +108,7 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.10.4</version>
+            <version>${scala.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -84,6 +116,7 @@
             <version>1.7.7</version>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>

@@ -85,4 +85,83 @@ public class JavaUtils {
     public static long timeStringAsMs(String str) {
         return parseTimeString(str, TimeUnit.MILLISECONDS);
     }
+
+    /**
+     * Convert a passed byte string (e.g. 50b, 100kb, or 250mb) to a ByteUnit for
+     * internal use. If no suffix is provided a direct conversion of the provided default is
+     * attempted.
+     */
+    private static long parseByteString(String str, ByteUnit unit) {
+        String lower = str.toLowerCase().trim();
+
+        try {
+            Matcher m = Pattern.compile("([0-9]+)([a-z]+)?").matcher(lower);
+            Matcher fractionMatcher = Pattern.compile("([0-9]+\\.[0-9]+)([a-z]+)?").matcher(lower);
+
+            if (m.matches()) {
+                long val = Long.parseLong(m.group(1));
+                String suffix = m.group(2);
+
+                // Check for invalid suffixes
+                if (suffix != null && !byteSuffixes.containsKey(suffix)) {
+                    throw new NumberFormatException("Invalid suffix: \"" + suffix + "\"");
+                }
+
+                // If suffix is valid use that, otherwise none was provided and use the default passed
+                return unit.convertFrom(val, suffix != null ? byteSuffixes.get(suffix) : unit);
+            } else if (fractionMatcher.matches()) {
+                throw new NumberFormatException("Fractional values are not supported. Input was: "
+                        + fractionMatcher.group(1));
+            } else {
+                throw new NumberFormatException("Failed to parse byte string: " + str);
+            }
+
+        } catch (NumberFormatException e) {
+            String timeError = "Size must be specified as bytes (b), " +
+                    "kibibytes (k), mebibytes (m), gibibytes (g), tebibytes (t), or pebibytes(p). " +
+                    "E.g. 50b, 100k, or 250m.";
+
+            throw new NumberFormatException(timeError + "\n" + e.getMessage());
+        }
+    }
+
+    /**
+     * Convert a passed byte string (e.g. 50b, 100k, or 250m) to bytes for
+     * internal use.
+     *
+     * If no suffix is provided, the passed number is assumed to be in bytes.
+     */
+    public static long byteStringAsBytes(String str) {
+        return parseByteString(str, ByteUnit.BYTE);
+    }
+
+    /**
+     * Convert a passed byte string (e.g. 50b, 100k, or 250m) to kibibytes for
+     * internal use.
+     *
+     * If no suffix is provided, the passed number is assumed to be in kibibytes.
+     */
+    public static long byteStringAsKb(String str) {
+        return parseByteString(str, ByteUnit.KiB);
+    }
+
+    /**
+     * Convert a passed byte string (e.g. 50b, 100k, or 250m) to mebibytes for
+     * internal use.
+     *
+     * If no suffix is provided, the passed number is assumed to be in mebibytes.
+     */
+    public static long byteStringAsMb(String str) {
+        return parseByteString(str, ByteUnit.MiB);
+    }
+
+    /**
+     * Convert a passed byte string (e.g. 50b, 100k, or 250m) to gibibytes for
+     * internal use.
+     *
+     * If no suffix is provided, the passed number is assumed to be in gibibytes.
+     */
+    public static long byteStringAsGb(String str) {
+        return parseByteString(str, ByteUnit.GiB);
+    }
 }

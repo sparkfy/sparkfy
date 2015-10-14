@@ -12,6 +12,16 @@
 
     <artifactId>sparkfy-common</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>chill_${scala.binary.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>chill-java</artifactId>
+        </dependency>
+    </dependencies>
 
 
 </project>
