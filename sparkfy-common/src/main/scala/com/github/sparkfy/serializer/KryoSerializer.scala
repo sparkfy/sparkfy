@@ -1,6 +1,6 @@
 package com.github.sparkfy.serializer
 
-import java.io.{InputStream, OutputStream,IOException}
+import java.io.{EOFException, IOException, InputStream, OutputStream}
 import java.nio.ByteBuffer
 
 import com.esotericsoftware.kryo.io.{Input => KryoInput, Output => KryoOutput}
@@ -21,26 +21,26 @@ import scala.reflect.ClassTag
  */
 class KryoSerializer(conf: Map[String, String]) extends Serializer with Logging with Serializable {
 
-  private val bufferSizeKb = conf.getSizeAsKb("spark.kryoserializer.buffer", "64k")
+  private val bufferSizeKb = conf.getSizeAsKb("kryoserializer.buffer", "64k")
 
   if (bufferSizeKb >= ByteUnit.GiB.toKiB(2)) {
-    throw new IllegalArgumentException("spark.kryoserializer.buffer must be less than " +
+    throw new IllegalArgumentException("kryoserializer.buffer must be less than " +
       s"2048 mb, got: + ${ByteUnit.KiB.toMiB(bufferSizeKb)} mb.")
   }
 
   private val bufferSize = ByteUnit.KiB.toBytes(bufferSizeKb).toInt
 
-  val maxBufferSizeMb = conf.getSizeAsMb("spark.kryoserializer.buffer.max", "64m").toInt
+  val maxBufferSizeMb = conf.getSizeAsMb("kryoserializer.buffer.max", "64m").toInt
   if (maxBufferSizeMb >= ByteUnit.GiB.toMiB(2)) {
-    throw new IllegalArgumentException("spark.kryoserializer.buffer.max must be less than " +
+    throw new IllegalArgumentException("kryoserializer.buffer.max must be less than " +
       s"2048 mb, got: + $maxBufferSizeMb mb.")
   }
   private val maxBufferSize = ByteUnit.MiB.toBytes(maxBufferSizeMb).toInt
 
-  private val referenceTracking = conf.getBoolean("spark.kryo.referenceTracking", true)
-  private val registrationRequired = conf.getBoolean("spark.kryo.registrationRequired", false)
-  private val userRegistrator = conf.get("spark.kryo.registrator")
-  private val classesToRegister = conf.getOrElse("spark.kryo.classesToRegister", "")
+  private val referenceTracking = conf.getBoolean("kryo.referenceTracking", true)
+  private val registrationRequired = conf.getBoolean("kryo.registrationRequired", false)
+  private val userRegistrator = conf.get("kryo.registrator")
+  private val classesToRegister = conf.getOrElse("kryo.classesToRegister", "")
     .split(',')
     .filter(!_.isEmpty)
 
@@ -52,9 +52,17 @@ class KryoSerializer(conf: Map[String, String]) extends Serializer with Logging 
     null
   }
 
-  override def newInstance(): SerializerInstance = ???
+  override def newInstance(): SerializerInstance = new KryoSerializerInstance(this)
 }
 
+
+/**
+ * Interface implemented by clients to register their classes with Kryo when using Kryo
+ * serialization.
+ */
+trait KryoRegistrator {
+  def registerClasses(kryo: Kryo)
+}
 
 class KryoSerializerInstance(ks: KryoSerializer) extends SerializerInstance {
 
@@ -138,9 +146,13 @@ class KryoSerializerInstance(ks: KryoSerializer) extends SerializerInstance {
     }
   }
 
-  override def serializeStream(s: OutputStream): SerializationStream = ???
+  override def serializeStream(s: OutputStream): SerializationStream = {
+    new KryoSerializationStream(this, s)
+  }
 
-  override def deserializeStream(s: InputStream): DeserializationStream = ???
+  override def deserializeStream(s: InputStream): DeserializationStream = {
+    new KryoDeserializationStream(this, s)
+  }
 
 }
 
@@ -171,6 +183,37 @@ class KryoSerializationStream(
         serInstance.releaseKryo(kryo)
         kryo = null
         output = null
+      }
+    }
+  }
+}
+
+class KryoDeserializationStream(
+                                 serInstance: KryoSerializerInstance,
+                                 inStream: InputStream) extends DeserializationStream {
+
+  private[this] var input: KryoInput = new KryoInput(inStream)
+  private[this] var kryo: Kryo = serInstance.borrowKryo()
+
+  override def readObject[T: ClassTag](): T = {
+    try {
+      kryo.readClassAndObject(input).asInstanceOf[T]
+    } catch {
+      // DeserializationStream uses the EOF exception to indicate stopping condition.
+      case e: KryoException if e.getMessage.toLowerCase.contains("buffer underflow") =>
+        throw new EOFException
+    }
+  }
+
+  override def close() {
+    if (input != null) {
+      try {
+        // Kryo's Input automatically closes the input stream it is using.
+        input.close()
+      } finally {
+        serInstance.releaseKryo(kryo)
+        kryo = null
+        input = null
       }
     }
   }
