@@ -5,6 +5,8 @@ package com.github.sparkfy.util
  */
 class MapConfWrapper(val conf: Map[String, String]) {
 
+  private final val avroNamespace = "avro.schema."
+
   /** Get a parameter; throws a NoSuchElementException if it's not set */
   private[this] def get(key: String): String = {
     conf.get(key).getOrElse(throw new NoSuchElementException(key))
@@ -123,6 +125,14 @@ class MapConfWrapper(val conf: Map[String, String]) {
   def getSizeAsGb(key: String, defaultValue: String): Long = {
     Utils.byteStringAsGb(get(key, defaultValue))
   }
+
+  /** Gets all the avro schemas in the configuration used in the generic Avro record serializer */
+  def getAvroSchema: Map[Long, String] = {
+    conf.filter(kv => kv._1.startsWith(avroNamespace)).map(kv => {
+      (kv._1.substring(avroNamespace.length).toLong, kv._2)
+    })
+  }
+
 
 }
 
