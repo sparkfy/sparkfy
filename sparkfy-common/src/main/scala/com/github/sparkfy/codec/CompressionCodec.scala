@@ -41,6 +41,10 @@ object CompressionCodec {
   }
 
 
+  def createCodec(conf: Map[String,String]): CompressionCodec = {
+    createCodec(conf, getCodecName(conf))
+  }
+
   def createCodec(conf: Map[String,String], codecName: String): CompressionCodec = {
     val codecClass = shortCompressionCodecNames.getOrElse(codecName.toLowerCase, codecName)
     val codec = try {

@@ -9,8 +9,11 @@ import com.github.sparkfy.util.ByteUnit
 import com.github.sparkfy.util.MapConfWrapper._
 import com.github.sparkfy.util.MapWrapper._
 import com.github.sparkfy.{Logging, SparkfyException}
-import com.twitter.chill.EmptyScalaKryoInstantiator
+import com.twitter.chill.{AllScalaRegistrar, EmptyScalaKryoInstantiator}
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import com.github.sparkfy.util.Utils
 
 import scala.reflect.ClassTag
 
@@ -67,6 +70,67 @@ class KryoSerializer(conf: Map[String, String]) extends Serializer with Logging 
 
     // For results returned by asJavaIterable. See JavaIterableWrapperSerializer.
     kryo.register(JavaIterableWrapperSerializer.wrapperClass, new JavaIterableWrapperSerializer)
+
+    kryo.register(classOf[GenericRecord], new GenericAvroSerializer(conf))
+    kryo.register(classOf[GenericData.Record], new GenericAvroSerializer(conf))
+
+    try {
+      // scalastyle:off classforname
+      // Use the default classloader when calling the user registrator.
+      Thread.currentThread.setContextClassLoader(classLoader)
+      // Register classes given through spark.kryo.classesToRegister.
+      classesToRegister
+        .foreach { className => kryo.register(Class.forName(className, true, classLoader)) }
+      // Allow the user to register their own classes by setting spark.kryo.registrator.
+      userRegistrator
+        .map(Class.forName(_, true, classLoader).newInstance().asInstanceOf[KryoRegistrator])
+        .foreach { reg => reg.registerClasses(kryo) }
+      // scalastyle:on classforname
+    } catch {
+      case e: Exception =>
+        throw new SparkfyException(s"Failed to register classes with Kryo", e)
+    } finally {
+      Thread.currentThread.setContextClassLoader(oldClassLoader)
+    }
+
+    // Register Chill's classes; we do this after our ranges and the user's own classes to let
+    // our code override the generic serializers in Chill for things like Seq
+    new AllScalaRegistrar().apply(kryo)
+
+    // Register types missed by Chill.
+    // scalastyle:off
+    kryo.register(classOf[Array[Tuple1[Any]]])
+    kryo.register(classOf[Array[Tuple2[Any, Any]]])
+    kryo.register(classOf[Array[Tuple3[Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple4[Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple5[Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple6[Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple7[Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple8[Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple9[Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple10[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple11[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple12[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple13[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple14[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple15[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple16[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple17[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple18[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple19[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple20[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple21[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+    kryo.register(classOf[Array[Tuple22[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
+
+    // scalastyle:on
+
+    kryo.register(None.getClass)
+    kryo.register(Nil.getClass)
+    kryo.register(Utils.classForName("scala.collection.immutable.$colon$colon"))
+    kryo.register(classOf[ArrayBuffer[Any]])
+
+    kryo.setClassLoader(classLoader)
+    kryo
 
 
     null
