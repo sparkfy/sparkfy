@@ -12,6 +12,24 @@ import scala.concurrent.{Await, Awaitable, Future}
  */
 object RpcEnv {
 
+  private def getRpcEnvFactory(conf: Map[String, String]): RpcEnvFactory = {
+    val rpcEnvNames = Map(
+      "akka" -> "org.apache.spark.rpc.akka.AkkaRpcEnvFactory",
+      "netty" -> "org.apache.spark.rpc.netty.NettyRpcEnvFactory")
+    val rpcEnvName = conf.getOrElse("spark.rpc", "netty")
+    val rpcEnvFactoryClassName = rpcEnvNames.getOrElse(rpcEnvName.toLowerCase, rpcEnvName)
+    Utils.classForName(rpcEnvFactoryClassName).newInstance().asInstanceOf[RpcEnvFactory]
+  }
+
+  def create(
+              name: String,
+              host: String,
+              port: Int,
+              conf: Map[String, String]): RpcEnv = {
+    // Using Reflection to create the RpcEnv to avoid to depend on Akka directly
+    val config = RpcEnvConfig(conf, name, host, port)
+    getRpcEnvFactory(conf).create(config)
+  }
 }
 
 
