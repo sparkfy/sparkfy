@@ -5,6 +5,8 @@ package com.github.sparkfy.cache
  */
 trait CacheFactory {
 
-  def createBuilder[K, V](name:String): CacheBuilder[K, V]
+  def createAll[K, V](name: String, get: K => V, getAll: Iterable[K] => Map[K, V]): Cache[K, V]
+
+  def create[K, V](name: String, get: K => V): Cache[K, V]
 
 }
