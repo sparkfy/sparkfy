@@ -133,6 +133,15 @@ class MapConfWrapper(val conf: Map[String, String]) {
     })
   }
 
+  def getPath(key: String, rootPath: Option[String] = None): Option[String] = {
+    conf.get(key).map(path => {
+      if (path.startsWith("/") || path.startsWith("[A-Z]:")) {
+        path
+      } else {
+        rootPath.getOrElse("") + path
+      }
+    })
+  }
 
 }
 
