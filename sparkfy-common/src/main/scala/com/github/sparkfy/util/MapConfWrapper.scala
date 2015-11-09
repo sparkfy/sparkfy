@@ -1,5 +1,7 @@
 package com.github.sparkfy.util
 
+import java.util.regex.Pattern
+
 /**
  * Created by yellowhuang on 2015/10/14.
  */
@@ -134,8 +136,9 @@ class MapConfWrapper(val conf: Map[String, String]) {
   }
 
   def getPath(key: String, rootPath: Option[String] = None): Option[String] = {
+    val reg ="[A-Z]:.*"
     conf.get(key).map(path => {
-      if (path.startsWith("/") || path.startsWith("[A-Z]:")) {
+      if (path.startsWith("/") || Pattern.matches(reg,path)) {
         path
       } else {
         rootPath.getOrElse("") + path
