@@ -1,18 +1,18 @@
 package com.github.sparkfy.util
 
-import java.io.{InputStream, IOException}
+import java.io.{IOException, InputStream}
 import java.util.Properties
 
 import com.github.sparkfy.{Logging, SparkfyException}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.NonFatal
-import scala.collection.JavaConverters._
 
 /**
  * Created by huangyu on 15/10/11.
  */
-object Utils extends Logging{
+object Utils extends Logging {
 
   /**
    * Return a pair of host and port extracted from the `sparkUrl`.
@@ -169,7 +169,7 @@ object Utils extends Logging{
     }
   }
 
- def loadConfFile(confInputStream: InputStream): Map[String, String] = {
+  def loadConfFile(confInputStream: InputStream): Map[String, String] = {
     val setting: mutable.Map[String, String] = new mutable.HashMap[String, String]()
     val prop = new Properties()
     prop.load(confInputStream)
@@ -177,5 +177,19 @@ object Utils extends Logging{
       setting.getOrElseUpdate(key, prop.getProperty(key))
     }
     setting.toMap
+  }
+
+  /** Joins a list of strings using the given separator. */
+  private def join(sep: String, elements: Iterable[String]): String = {
+    val sb: StringBuilder = new StringBuilder
+    for (e <- elements) {
+      if (e != null) {
+        if (sb.length > 0) {
+          sb.append(sep)
+        }
+        sb.append(e)
+      }
+    }
+    sb.toString
   }
 }
