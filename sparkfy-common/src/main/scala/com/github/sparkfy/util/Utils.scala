@@ -169,6 +169,19 @@ object Utils extends Logging {
     }
   }
 
+  def toPath(path: String): String = {
+    if (path.endsWith("/")) path else path + "/"
+  }
+
+  def absolutePath(rootPath: String, path: String): String = {
+    if (path.startsWith("/") || path.contains(":")) path else rootPath + path
+  }
+
+  //  def absolutePath(rootPath: String, path: String): String = {
+  //    toPath(if (path.startsWith("/") || path.contains(":")) path else rootPath + path)
+  //  }
+
+
   def loadConfFile(confInputStream: InputStream): Map[String, String] = {
     val setting: mutable.Map[String, String] = new mutable.HashMap[String, String]()
     val prop = new Properties()
