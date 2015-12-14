@@ -199,6 +199,7 @@
                         </includes>
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <argLine>-Xmx3g -Xss4096k -XX:MaxPermSize=${MaxPermGen} -XX:ReservedCodeCacheSize=512m</argLine>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
                 <plugin>
