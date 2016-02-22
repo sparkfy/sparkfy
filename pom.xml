@@ -8,13 +8,14 @@
         <module>sparkfy-common</module>
         <module>sparkfy-math</module>
         <module>sparkfy-assembly</module>
+        <module>sparkfy-network</module>
     </modules>
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <scala.version>2.10.5</scala.version>
+        <scala.version>2.10.4</scala.version>
         <scala.binary.version>2.10</scala.binary.version>
         <PermGen>64m</PermGen>
         <MaxPermGen>512m</MaxPermGen>
@@ -37,6 +38,11 @@
             </dependency>
             <dependency>
                 <artifactId>sparkfy-math</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <artifactId>sparkfy-network</artifactId>
                 <groupId>${project.groupId}</groupId>
                 <version>${project.version}</version>
             </dependency>
@@ -104,6 +110,11 @@
                         <artifactId>scala-reflect</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>4.0.29.Final</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

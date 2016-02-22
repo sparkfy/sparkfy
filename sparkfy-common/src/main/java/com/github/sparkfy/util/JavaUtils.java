@@ -1,7 +1,13 @@
 package com.github.sparkfy.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +17,7 @@ import java.util.regex.Pattern;
  */
 public class JavaUtils {
 
+    private static final Logger logger = LoggerFactory.getLogger(JavaUtils.class);
     private static final ImmutableMap<String, TimeUnit> timeSuffixes =
             ImmutableMap.<String, TimeUnit>builder()
                     .put("us", TimeUnit.MICROSECONDS)
@@ -36,6 +43,19 @@ public class JavaUtils {
                     .put("p", ByteUnit.PiB)
                     .put("pb", ByteUnit.PiB)
                     .build();
+
+    /**
+     * Closes the given object, ignoring IOExceptions.
+     */
+    public static void closeQuietly(Closeable closeable) {
+        try {
+            if (closeable != null) {
+                closeable.close();
+            }
+        } catch (IOException e) {
+            logger.error("IOException should not have been thrown.", e);
+        }
+    }
 
     /**
      * Convert a passed time string (e.g. 50s, 100ms, or 250us) to a time count for
@@ -128,7 +148,7 @@ public class JavaUtils {
     /**
      * Convert a passed byte string (e.g. 50b, 100k, or 250m) to bytes for
      * internal use.
-     *
+     * <p/>
      * If no suffix is provided, the passed number is assumed to be in bytes.
      */
     public static long byteStringAsBytes(String str) {
@@ -138,7 +158,7 @@ public class JavaUtils {
     /**
      * Convert a passed byte string (e.g. 50b, 100k, or 250m) to kibibytes for
      * internal use.
-     *
+     * <p/>
      * If no suffix is provided, the passed number is assumed to be in kibibytes.
      */
     public static long byteStringAsKb(String str) {
@@ -148,7 +168,7 @@ public class JavaUtils {
     /**
      * Convert a passed byte string (e.g. 50b, 100k, or 250m) to mebibytes for
      * internal use.
-     *
+     * <p/>
      * If no suffix is provided, the passed number is assumed to be in mebibytes.
      */
     public static long byteStringAsMb(String str) {
@@ -158,10 +178,67 @@ public class JavaUtils {
     /**
      * Convert a passed byte string (e.g. 50b, 100k, or 250m) to gibibytes for
      * internal use.
-     *
+     * <p/>
      * If no suffix is provided, the passed number is assumed to be in gibibytes.
      */
     public static long byteStringAsGb(String str) {
+
         return parseByteString(str, ByteUnit.GiB);
+    }
+
+    /*
+   * Delete a file or directory and its contents recursively.
+   * Don't follow directories if they are symlinks.
+   * Throws an exception if deletion is unsuccessful.
+   */
+    public static void deleteRecursively(File file) throws IOException {
+        if (file == null) {
+            return;
+        }
+
+        if (file.isDirectory() && !isSymlink(file)) {
+            IOException savedIOException = null;
+            for (File child : listFilesSafely(file)) {
+                try {
+                    deleteRecursively(child);
+                } catch (IOException e) {
+                    // In case of multiple exceptions, only last one will be thrown
+                    savedIOException = e;
+                }
+            }
+            if (savedIOException != null) {
+                throw savedIOException;
+            }
+        }
+
+        boolean deleted = file.delete();
+        // Delete can also fail if the file simply did not exist.
+        if (!deleted && file.exists()) {
+            throw new IOException("Failed to delete: " + file.getAbsolutePath());
+        }
+    }
+
+    private static File[] listFilesSafely(File file) throws IOException {
+        if (file.exists()) {
+            File[] files = file.listFiles();
+            if (files == null) {
+                throw new IOException("Failed to list files for dir: " + file);
+            }
+            return files;
+        } else {
+            return new File[0];
+        }
+    }
+
+    private static boolean isSymlink(File file) throws IOException {
+        Preconditions.checkNotNull(file);
+        File fileInCanonicalDir = null;
+        if (file.getParent() == null) {
+            fileInCanonicalDir = file;
+        } else {
+            fileInCanonicalDir = new File(file.getParentFile().getCanonicalFile(), file.getName());
+        }
+        return !fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile());
+
     }
 }
