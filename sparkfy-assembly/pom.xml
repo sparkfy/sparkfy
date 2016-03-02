@@ -25,6 +25,10 @@
             <artifactId>sparkfy-math</artifactId>
             <groupId>${project.groupId}</groupId>
         </dependency>
+        <dependency>
+            <groupId>com.github.sparkfy</groupId>
+            <artifactId>sparkfy-network</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

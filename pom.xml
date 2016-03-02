@@ -338,6 +338,19 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>mrd-releases</id>
+            <name>Nexus Release Repository</name>
+            <url>http://10.10.126.228:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <!-- use the following if you ARE using a snapshot version. -->
+        <snapshotRepository>
+            <id>mrd-snapshots</id>
+            <name>Search Book Replace Plugin</name>
+            <url>http://10.10.126.228:8081/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
     <profiles>
         <profile>
             <id>scala-2.11</id>
