@@ -73,6 +73,9 @@ public class TransportResponseHandler extends MessageHandler<ResponseMessage> {
 
   public void addRpcRequest(long requestId, RpcResponseCallback callback) {
     updateTimeOfLastRequest();
+    if(outstandingRpcs.containsKey(requestId)){
+        System.out.println("Repeat request id");
+    }
     outstandingRpcs.put(requestId, callback);
   }
 

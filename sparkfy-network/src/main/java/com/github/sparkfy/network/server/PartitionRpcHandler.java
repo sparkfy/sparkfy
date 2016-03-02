@@ -266,4 +266,16 @@ public class PartitionRpcHandler extends RpcHandler {
         }
     }
 
+//    static class RecoverTask implements Runnable {
+//        private final ByteBuffer msg;
+//
+//        public RecoverTask(ByteBuffer msg) {
+////            ByteBuffer dmsg = msg.duplicate();
+////            byte[] bytes = new byte[dmsg.remaining()];
+////            dmsg.get(bytes);
+////            this.msg = ByteBuffer.wrap(bytes);
+//            this.msg = msg.duplicate();
+//        }
+//    }
+
 }
