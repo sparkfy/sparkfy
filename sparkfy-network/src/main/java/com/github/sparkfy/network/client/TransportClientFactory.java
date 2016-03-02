@@ -40,6 +40,7 @@ import java.net.SocketAddress;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -67,6 +68,7 @@ public class TransportClientFactory implements Closeable {
       }
     }
   }
+
 
   private final Logger logger = LoggerFactory.getLogger(TransportClientFactory.class);
 
@@ -256,4 +258,11 @@ public class TransportClientFactory implements Closeable {
       workerGroup = null;
     }
   }
+
+
+    private static AtomicLong requestId = new AtomicLong(0);
+
+    public static long generateRequestId(){
+        return requestId.incrementAndGet();
+    }
 }
