@@ -46,7 +46,7 @@ public class TransportResponseHandler extends MessageHandler<ResponseMessage> {
 
   private final Map<StreamChunkId, ChunkReceivedCallback> outstandingFetches;
 
-  private final Map<Long, RpcResponseCallback> outstandingRpcs;
+  public final Map<Long, RpcResponseCallback> outstandingRpcs;
 
   private final Queue<StreamCallback> streamCallbacks;
   private volatile boolean streamActive;
@@ -73,9 +73,6 @@ public class TransportResponseHandler extends MessageHandler<ResponseMessage> {
 
   public void addRpcRequest(long requestId, RpcResponseCallback callback) {
     updateTimeOfLastRequest();
-    if(outstandingRpcs.containsKey(requestId)){
-      System.out.println("repeat");
-    }
     outstandingRpcs.put(requestId, callback);
   }
 

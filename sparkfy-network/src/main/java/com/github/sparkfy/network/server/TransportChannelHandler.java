@@ -57,11 +57,11 @@ public class TransportChannelHandler extends SimpleChannelInboundHandler<Message
   private final boolean closeIdleConnections;
 
   public TransportChannelHandler(
-          TransportClient client,
-          TransportResponseHandler responseHandler,
-          TransportRequestHandler requestHandler,
-          long requestTimeoutMs,
-          boolean closeIdleConnections) {
+      TransportClient client,
+      TransportResponseHandler responseHandler,
+      TransportRequestHandler requestHandler,
+      long requestTimeoutMs,
+      boolean closeIdleConnections) {
     this.client = client;
     this.responseHandler = responseHandler;
     this.requestHandler = requestHandler;

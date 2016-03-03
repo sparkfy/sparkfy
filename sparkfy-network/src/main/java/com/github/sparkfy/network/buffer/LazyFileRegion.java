@@ -17,10 +17,10 @@
 
 package com.github.sparkfy.network.buffer;
 
+import com.github.sparkfy.util.JavaUtils;
 import com.google.common.base.Objects;
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
-import com.github.sparkfy.util.JavaUtils;
 
 import java.io.File;
 import java.io.FileInputStream;

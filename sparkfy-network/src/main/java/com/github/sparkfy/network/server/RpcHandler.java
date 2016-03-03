@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /**
- * Handler for sendRPC() messages sent by {@link com.github.sparkfy.network.client.TransportClient}s.
+ * Handler for sendRPC() messages sent by {@link org.apache.spark.network.client.TransportClient}s.
  */
 public abstract class RpcHandler {
 

@@ -55,9 +55,9 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
   private final StreamManager streamManager;
 
   public TransportRequestHandler(
-          Channel channel,
-          TransportClient reverseClient,
-          RpcHandler rpcHandler) {
+      Channel channel,
+      TransportClient reverseClient,
+      RpcHandler rpcHandler) {
     this.channel = channel;
     this.reverseClient = reverseClient;
     this.rpcHandler = rpcHandler;
@@ -178,6 +178,7 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
    */
   private void respond(final Encodable result) {
     final String remoteAddress = channel.remoteAddress().toString();
+
     channel.writeAndFlush(result).addListener(
       new ChannelFutureListener() {
         @Override

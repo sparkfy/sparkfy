@@ -43,112 +43,113 @@ import java.util.concurrent.TimeUnit;
  * Server for the efficient, low-level streaming service.
  */
 public class TransportServer implements Closeable {
-    private final Logger logger = LoggerFactory.getLogger(TransportServer.class);
+  private final Logger logger = LoggerFactory.getLogger(TransportServer.class);
 
-    private final TransportContext context;
-    private final TransportConf conf;
-    private final RpcHandler appRpcHandler;
-    private final List<TransportServerBootstrap> bootstraps;
+  private final TransportContext context;
+  private final TransportConf conf;
+  private final RpcHandler appRpcHandler;
+  private final List<TransportServerBootstrap> bootstraps;
 
-    private ServerBootstrap bootstrap;
-    private ChannelFuture channelFuture;
-    private int port = -1;
+  private ServerBootstrap bootstrap;
+  private ChannelFuture channelFuture;
+  private int port = -1;
 
-    /**
-     * Creates a TransportServer that binds to the given host and the given port, or to any available
-     * if 0. If you don't want to bind to any special host, set "hostToBind" to null.
-     */
-    public TransportServer(
-            TransportContext context,
-            String hostToBind,
-            int portToBind,
-            RpcHandler appRpcHandler,
-            List<TransportServerBootstrap> bootstraps) {
-        this.context = context;
-        this.conf = context.getConf();
-        this.appRpcHandler = appRpcHandler;
-        this.bootstraps = Lists.newArrayList(Preconditions.checkNotNull(bootstraps));
+  /**
+   * Creates a TransportServer that binds to the given host and the given port, or to any available
+   * if 0. If you don't want to bind to any special host, set "hostToBind" to null.
+   * */
+  public TransportServer(
+      TransportContext context,
+      String hostToBind,
+      int portToBind,
+      RpcHandler appRpcHandler,
+      List<TransportServerBootstrap> bootstraps) {
+    this.context = context;
+    this.conf = context.getConf();
+    this.appRpcHandler = appRpcHandler;
+    this.bootstraps = Lists.newArrayList(Preconditions.checkNotNull(bootstraps));
 
-        try {
-            init(hostToBind, portToBind);
-        } catch (RuntimeException e) {
-            JavaUtils.closeQuietly(this);
-            throw e;
-        }
+    try {
+      init(hostToBind, portToBind);
+    } catch (RuntimeException e) {
+      JavaUtils.closeQuietly(this);
+      throw e;
+    }
+  }
+
+  public int getPort() {
+    if (port == -1) {
+      throw new IllegalStateException("Server not initialized");
+    }
+    return port;
+  }
+
+  private void init(String hostToBind, int portToBind) {
+
+    IOMode ioMode = IOMode.valueOf(conf.ioMode());
+    EventLoopGroup bossGroup =
+      NettyUtils.createEventLoop(ioMode, conf.serverThreads(), "shuffle-server");
+    EventLoopGroup workerGroup = bossGroup;
+
+    PooledByteBufAllocator allocator = NettyUtils.createPooledByteBufAllocator(
+      conf.preferDirectBufs(), true /* allowCache */, conf.serverThreads());
+
+    bootstrap = new ServerBootstrap()
+      .group(bossGroup, workerGroup)
+      .channel(NettyUtils.getServerChannelClass(ioMode))
+      .option(ChannelOption.ALLOCATOR, allocator)
+      .childOption(ChannelOption.ALLOCATOR, allocator);
+
+    if (conf.backLog() > 0) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, conf.backLog());
     }
 
-    public int getPort() {
-        if (port == -1) {
-            throw new IllegalStateException("Server not initialized");
-        }
-        return port;
+    if (conf.receiveBuf() > 0) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, conf.receiveBuf());
     }
 
-    public void sync() throws InterruptedException {
-        channelFuture.channel().closeFuture().sync();
+    if (conf.sendBuf() > 0) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, conf.sendBuf());
     }
 
-    private void init(String hostToBind, int portToBind) {
-
-        IOMode ioMode = IOMode.valueOf(conf.ioMode());
-        EventLoopGroup bossGroup =
-                NettyUtils.createEventLoop(ioMode, conf.serverThreads(), "shuffle-server");
-        EventLoopGroup workerGroup = bossGroup;
-
-        PooledByteBufAllocator allocator = NettyUtils.createPooledByteBufAllocator(
-                conf.preferDirectBufs(), true /* allowCache */, conf.serverThreads());
-
-        bootstrap = new ServerBootstrap()
-                .group(bossGroup, workerGroup)
-                .channel(NettyUtils.getServerChannelClass(ioMode))
-                .option(ChannelOption.ALLOCATOR, allocator)
-                .childOption(ChannelOption.ALLOCATOR, allocator);
-
-        if (conf.backLog() > 0) {
-            bootstrap.option(ChannelOption.SO_BACKLOG, conf.backLog());
+    bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+      @Override
+      protected void initChannel(SocketChannel ch) throws Exception {
+        RpcHandler rpcHandler = appRpcHandler;
+        for (TransportServerBootstrap bootstrap : bootstraps) {
+          rpcHandler = bootstrap.doBootstrap(ch, rpcHandler);
         }
+        context.initializePipeline(ch, rpcHandler);
+      }
+    });
 
-        if (conf.receiveBuf() > 0) {
-            bootstrap.childOption(ChannelOption.SO_RCVBUF, conf.receiveBuf());
-        }
+    InetSocketAddress address = hostToBind == null ?
+        new InetSocketAddress(portToBind): new InetSocketAddress(hostToBind, portToBind);
+    channelFuture = bootstrap.bind(address);
+    channelFuture.syncUninterruptibly();
 
-        if (conf.sendBuf() > 0) {
-            bootstrap.childOption(ChannelOption.SO_SNDBUF, conf.sendBuf());
-        }
+    port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
+    logger.debug("Shuffle server started on port :" + port);
+  }
 
-        bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            protected void initChannel(SocketChannel ch) throws Exception {
-                RpcHandler rpcHandler = appRpcHandler;
-                for (TransportServerBootstrap bootstrap : bootstraps) {
-                    rpcHandler = bootstrap.doBootstrap(ch, rpcHandler);
-                }
-                context.initializePipeline(ch, rpcHandler);
-            }
-        });
-
-        InetSocketAddress address = hostToBind == null ?
-                new InetSocketAddress(portToBind) : new InetSocketAddress(hostToBind, portToBind);
-        channelFuture = bootstrap.bind(address);
-        channelFuture.syncUninterruptibly();
-
-        port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
-        logger.debug("Shuffle server started on port :" + port);
+  @Override
+  public void close() {
+    if (channelFuture != null) {
+      // close is a local operation and should finish within milliseconds; timeout just to be safe
+      channelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
+      channelFuture = null;
     }
-
-    @Override
-    public void close() {
-        if (channelFuture != null) {
-            // close is a local operation and should finish within milliseconds; timeout just to be safe
-            channelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
-            channelFuture = null;
-        }
-        if (bootstrap != null && bootstrap.group() != null) {
-            bootstrap.group().shutdownGracefully();
-        }
-        if (bootstrap != null && bootstrap.childGroup() != null) {
-            bootstrap.childGroup().shutdownGracefully();
-        }
-        bootstrap = null;
+    if (bootstrap != null && bootstrap.group() != null) {
+      bootstrap.group().shutdownGracefully();
     }
+    if (bootstrap != null && bootstrap.childGroup() != null) {
+      bootstrap.childGroup().shutdownGracefully();
+    }
+    bootstrap = null;
+  }
+
+
+  public void sync() throws InterruptedException {
+    channelFuture.channel().closeFuture().sync();
+  }
 }

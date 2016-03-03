@@ -17,29 +17,26 @@
 
 package com.github.sparkfy.network;
 
-import java.util.List;
-
+import com.github.sparkfy.network.client.TransportClient;
+import com.github.sparkfy.network.client.TransportClientBootstrap;
+import com.github.sparkfy.network.client.TransportClientFactory;
+import com.github.sparkfy.network.client.TransportResponseHandler;
+import com.github.sparkfy.network.protocol.MessageDecoder;
+import com.github.sparkfy.network.protocol.MessageEncoder;
+import com.github.sparkfy.network.server.*;
+import com.github.sparkfy.network.util.NettyUtils;
+import com.github.sparkfy.network.util.TransportConf;
+import com.github.sparkfy.network.util.TransportFrameDecoder;
 import com.google.common.collect.Lists;
 import io.netty.channel.Channel;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.spark.network.client.TransportClient;
-import org.apache.spark.network.client.TransportClientBootstrap;
-import org.apache.spark.network.client.TransportClientFactory;
-import org.apache.spark.network.client.TransportResponseHandler;
-import org.apache.spark.network.protocol.MessageDecoder;
-import org.apache.spark.network.protocol.MessageEncoder;
-import org.apache.spark.network.server.RpcHandler;
-import org.apache.spark.network.server.TransportChannelHandler;
-import org.apache.spark.network.server.TransportRequestHandler;
-import org.apache.spark.network.server.TransportServer;
-import org.apache.spark.network.server.TransportServerBootstrap;
-import org.apache.spark.network.util.NettyUtils;
-import org.apache.spark.network.util.TransportConf;
-import org.apache.spark.network.util.TransportFrameDecoder;
+import java.util.List;
 
 /**
  * Contains the context to create a {@link TransportServer}, {@link TransportClientFactory}, and to
@@ -135,6 +132,8 @@ public class TransportContext {
       TransportChannelHandler channelHandler = createChannelHandler(channel, channelRpcHandler);
       channel.pipeline()
         .addLast("encoder", encoder)
+//              .addLast(new LengthFieldPrepender(4))
+//              .addLast(TransportFrameDecoder.HANDLER_NAME + "ext", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
         .addLast(TransportFrameDecoder.HANDLER_NAME, NettyUtils.createFrameDecoder())
         .addLast("decoder", decoder)
         .addLast("idleStateHandler", new IdleStateHandler(0, 0, conf.connectionTimeoutMs() / 1000))

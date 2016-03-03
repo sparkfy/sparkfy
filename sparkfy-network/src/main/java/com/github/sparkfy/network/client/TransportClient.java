@@ -214,7 +214,6 @@ public class TransportClient implements Closeable {
     logger.trace("Sending RPC to {}", serverAddr);
 
     final long requestId = Math.abs(UUID.randomUUID().getLeastSignificantBits());
-//    final long requestId = TransportClientFactory.generateRequestId();
     handler.addRpcRequest(requestId, callback);
 
     channel.writeAndFlush(new RpcRequest(requestId, new NioManagedBuffer(message))).addListener(

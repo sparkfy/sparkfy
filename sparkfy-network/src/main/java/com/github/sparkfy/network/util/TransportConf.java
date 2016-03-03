@@ -76,7 +76,7 @@ public class TransportConf {
   /** Connect timeout in milliseconds. Default 120 secs. */
   public int connectionTimeoutMs() {
     long defaultNetworkTimeoutS = JavaUtils.timeStringAsSec(
-      conf.get("spark.network.timeout", "120s"));
+            conf.get("spark.network.timeout", "120s"));
     long defaultTimeoutMs = JavaUtils.timeStringAsSec(
       conf.get(SPARK_NETWORK_IO_CONNECTIONTIMEOUT_KEY, defaultNetworkTimeoutS + "s")) * 1000;
     return (int) defaultTimeoutMs;
@@ -133,7 +133,8 @@ public class TransportConf {
    * memory mapping has high overhead for blocks close to or below the page size of the OS.
    */
   public int memoryMapBytes() {
-    return conf.getInt("spark.storage.memoryMapThreshold", 2 * 1024 * 1024);
+    return Ints.checkedCast(JavaUtils.byteStringAsBytes(
+            conf.get("spark.storage.memoryMapThreshold", "2m")));
   }
 
   /**
