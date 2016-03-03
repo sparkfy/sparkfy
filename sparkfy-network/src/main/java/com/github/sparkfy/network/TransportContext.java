@@ -17,16 +17,8 @@
 
 package com.github.sparkfy.network;
 
-import com.github.sparkfy.network.client.TransportClient;
-import com.github.sparkfy.network.client.TransportClientBootstrap;
-import com.github.sparkfy.network.client.TransportClientFactory;
-import com.github.sparkfy.network.client.TransportResponseHandler;
-import com.github.sparkfy.network.protocol.MessageDecoder;
-import com.github.sparkfy.network.protocol.MessageEncoder;
-import com.github.sparkfy.network.server.*;
-import com.github.sparkfy.network.util.NettyUtils;
-import com.github.sparkfy.network.util.TransportConf;
-import com.github.sparkfy.network.util.TransportFrameDecoder;
+import java.util.List;
+
 import com.google.common.collect.Lists;
 import io.netty.channel.Channel;
 import io.netty.channel.socket.SocketChannel;
@@ -34,11 +26,24 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import org.apache.spark.network.client.TransportClient;
+import org.apache.spark.network.client.TransportClientBootstrap;
+import org.apache.spark.network.client.TransportClientFactory;
+import org.apache.spark.network.client.TransportResponseHandler;
+import org.apache.spark.network.protocol.MessageDecoder;
+import org.apache.spark.network.protocol.MessageEncoder;
+import org.apache.spark.network.server.RpcHandler;
+import org.apache.spark.network.server.TransportChannelHandler;
+import org.apache.spark.network.server.TransportRequestHandler;
+import org.apache.spark.network.server.TransportServer;
+import org.apache.spark.network.server.TransportServerBootstrap;
+import org.apache.spark.network.util.NettyUtils;
+import org.apache.spark.network.util.TransportConf;
+import org.apache.spark.network.util.TransportFrameDecoder;
 
 /**
  * Contains the context to create a {@link TransportServer}, {@link TransportClientFactory}, and to
- * setup Netty Channel pipelines with a {@link com.github.sparkfy.network.server.TransportChannelHandler}.
+ * setup Netty Channel pipelines with a {@link org.apache.spark.network.server.TransportChannelHandler}.
  *
  * There are two communication protocols that the TransportClient provides, control-plane RPCs and
  * data-plane "chunk fetching". The handling of the RPCs is performed outside of the scope of the
@@ -113,7 +118,7 @@ public class TransportContext {
 
   /**
    * Initializes a client or server Netty Channel Pipeline which encodes/decodes messages and
-   * has a {@link com.github.sparkfy.network.server.TransportChannelHandler} to handle request or
+   * has a {@link org.apache.spark.network.server.TransportChannelHandler} to handle request or
    * response messages.
    *
    * @param channel The channel to initialize.
