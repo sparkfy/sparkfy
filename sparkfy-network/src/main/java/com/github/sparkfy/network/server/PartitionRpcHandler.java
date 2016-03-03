@@ -244,11 +244,11 @@ public class PartitionRpcHandler extends RpcHandler {
                 TransportClient client = null;
                 try {
                     client = clientFactory.createClient(hostPort.host, hostPort.port);
-                    synchronized (client) {
-                        client.sendRpcSync(msg.duplicate(), timeoutMs);
-                    }
+//                    synchronized (client) {
+//                        client.sendRpcSync(msg.duplicate(), timeoutMs);
+//                    }
                 } catch (Exception e) {
-                    client.close();
+//                    client.close();
                     remove(i);
                     logger.warn("Failed to connect client:" + hostPort.toString(), e);
                 }
@@ -275,14 +275,14 @@ public class PartitionRpcHandler extends RpcHandler {
                 TransportClient client = null;
                 try {
                     client = clientFactory.createClient(hostPort.host, hostPort.port);
-                    synchronized (client) {
-                        client.sendRpcSync(msg.duplicate(), timeoutMs);
-                    }
+//                    synchronized (client) {
+//                        client.sendRpcSync(msg.duplicate(), timeoutMs);
+//                    }
                     recovery(i);
                 } catch (Exception e) {
-                    if (client != null) {
-                        client.close();
-                    }
+//                    if (client != null) {
+//                        client.close();
+//                    }
                     logger.warn("Failed to connect client:" + hostPort.toString(), e);
                 }
             }
