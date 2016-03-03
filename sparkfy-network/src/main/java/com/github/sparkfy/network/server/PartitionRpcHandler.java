@@ -63,21 +63,21 @@ public class PartitionRpcHandler extends RpcHandler {
         clientFactory = context.createClientFactory();
 
 
-        int activeClientNum = 0;
+//        int activeClientNum = 0;
         for (int i = 0; i < this.hostPorts.length; i++) {
             HostPort hostPort = get(i);
             if (hostPort == null) continue;
             try {
                 clientFactory.createClient(hostPort.host, hostPort.port);
-                activeClientNum++;
+//                activeClientNum++;
             } catch (IOException e) {
                 remove(i);
                 logger.warn("Failed to connect client:" + hostPort.toString(), e);
             }
         }
-        if (activeClientNum == 0) {
-            throw new RuntimeException("Failed to connect all client(" + Arrays.toString(this.hostPorts) + ")");
-        }
+//        if (activeClientNum == 0) {
+//            throw new RuntimeException("Failed to connect all client(" + Arrays.toString(this.hostPorts) + ")");
+//        }
 
         String delayStr = conf.get("reliable.server.delay");
         String timeoutMsStr = conf.get("reliable.server.timeoutMs");
@@ -139,22 +139,7 @@ public class PartitionRpcHandler extends RpcHandler {
             synchronized (recoveryLock) {
                 if (recoverTask == null) {
                     recoverTask = ThreadUtils.newDaemonSingleThreadScheduledExecutor("recoveryTask");
-                    recoverTask.scheduleWithFixedDelay(new InnerTask(msg) {
-                        @Override
-                        public void run() {
-                            for (int i = 0; i < hostPorts.length; i++) {
-                                HostPort hostPort = getRefused(i);
-                                if (hostPort == null) continue;
-                                try {
-                                    clientFactory.createClient(hostPort.host, hostPort.port).
-                                            sendRpcSync(msg.duplicate(), timeoutMs);
-                                    recovery(i);
-                                } catch (Exception e) {
-                                    logger.warn("Failed to connect client:" + hostPort.toString(), e);
-                                }
-                            }
-                        }
-                    }, 0L, delay, TimeUnit.MILLISECONDS);
+                    recoverTask.scheduleWithFixedDelay(new RecoveryTask(msg), 0L, delay, TimeUnit.MILLISECONDS);
                 }
             }
         }
@@ -167,22 +152,7 @@ public class PartitionRpcHandler extends RpcHandler {
             synchronized (connectLock) {
                 if (connectTask == null) {
                     connectTask = ThreadUtils.newDaemonSingleThreadScheduledExecutor("connectTask");
-                    connectTask.scheduleWithFixedDelay(new InnerTask(msg) {
-                        @Override
-                        public void run() {
-                            for (int i = 0; i < hostPorts.length; i++) {
-                                HostPort hostPort = get(i);
-                                if (hostPort == null) continue;
-                                try {
-                                    clientFactory.createClient(hostPort.host, hostPort.port).
-                                            sendRpcSync(msg.duplicate(), timeoutMs);
-                                } catch (Exception e) {
-                                    remove(i);
-                                    logger.warn("Failed to connect client:" + hostPort.toString(), e);
-                                }
-                            }
-                        }
-                    }, 0L, delay, TimeUnit.MILLISECONDS);
+                    connectTask.scheduleWithFixedDelay(new ConnectTask(msg), 0L, delay, TimeUnit.MILLISECONDS);
                 }
             }
         }
@@ -255,27 +225,69 @@ public class PartitionRpcHandler extends RpcHandler {
         }
     }
 
-    static abstract class InnerTask implements Runnable {
+    class ConnectTask implements Runnable {
         private final ByteBuffer msg;
 
-        public InnerTask(ByteBuffer msg) {
-            ByteBuffer dmsg = msg.duplicate();
-            byte[] bytes = new byte[dmsg.remaining()];
-            dmsg.get(bytes);
-            this.msg = ByteBuffer.wrap(bytes);
+        public ConnectTask(ByteBuffer msg) {
+//            ByteBuffer dmsg = msg.duplicate();
+//            byte[] bytes = new byte[dmsg.remaining()];
+//            dmsg.get(bytes);
+//            this.msg = ByteBuffer.wrap(bytes);
+            this.msg = msg.duplicate();
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < hostPorts.length; i++) {
+                HostPort hostPort = get(i);
+                if (hostPort == null) continue;
+                TransportClient client = null;
+                try {
+                    client = clientFactory.createClient(hostPort.host, hostPort.port);
+                    synchronized (client) {
+                        client.sendRpcSync(msg.duplicate(), timeoutMs);
+                    }
+                } catch (Exception e) {
+                    client.close();
+                    remove(i);
+                    logger.warn("Failed to connect client:" + hostPort.toString(), e);
+                }
+            }
         }
     }
 
-//    static class RecoverTask implements Runnable {
-//        private final ByteBuffer msg;
-//
-//        public RecoverTask(ByteBuffer msg) {
-////            ByteBuffer dmsg = msg.duplicate();
-////            byte[] bytes = new byte[dmsg.remaining()];
-////            dmsg.get(bytes);
-////            this.msg = ByteBuffer.wrap(bytes);
-//            this.msg = msg.duplicate();
-//        }
-//    }
+    class RecoveryTask implements Runnable {
+        private final ByteBuffer msg;
+
+        public RecoveryTask(ByteBuffer msg) {
+//            ByteBuffer dmsg = msg.duplicate();
+//            byte[] bytes = new byte[dmsg.remaining()];
+//            dmsg.get(bytes);
+//            this.msg = ByteBuffer.wrap(bytes);
+            this.msg = msg.duplicate();
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < hostPorts.length; i++) {
+                HostPort hostPort = getRefused(i);
+                if (hostPort == null) continue;
+                TransportClient client = null;
+                try {
+                    client = clientFactory.createClient(hostPort.host, hostPort.port);
+                    synchronized (client) {
+                        client.sendRpcSync(msg.duplicate(), timeoutMs);
+                    }
+                    recovery(i);
+                } catch (Exception e) {
+                    if (client != null) {
+                        client.close();
+                    }
+                    logger.warn("Failed to connect client:" + hostPort.toString(), e);
+                }
+            }
+        }
+    }
+
 
 }
