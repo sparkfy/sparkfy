@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  * NB: This class is used to make requests to the server, while {@link TransportResponseHandler} is
  * responsible for handling responses from the server.
  * <p/>
- * Concurrency: thread safe and can be called from multiple threads.
+ * Concurrency: thread safe and can be called from multiple threads
  */
 public class TransportClient implements Closeable {
     private final Logger logger = LoggerFactory.getLogger(TransportClient.class);
@@ -317,7 +317,11 @@ public class TransportClient implements Closeable {
         sendRpc(message, new RpcResponseCallback() {
             @Override
             public void onSuccess(ByteBuffer response) {
-                result.set(response);
+                ByteBuffer copy = ByteBuffer.allocate(response.remaining());
+                copy.put(response);
+                // flip "copy" to make it readable
+                copy.flip();
+                result.set(copy);
             }
 
             @Override
