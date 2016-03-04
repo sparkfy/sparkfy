@@ -130,7 +130,12 @@ public class ReliableRpcHandler extends RpcHandler {
                             synchronized (isResponse) {
                                 if (!isResponse[0]) {
                                     isResponse[0] = true;
-                                    callback.onSuccess(response);
+                                    ByteBuffer copy = ByteBuffer.allocate(response.remaining());
+                                    copy.put(response);
+                                    // flip "copy" to make it readable
+                                    copy.flip();
+                                    callback.onSuccess(copy);
+                                    callback.onSuccess(copy);
                                 }
                             }
                         }

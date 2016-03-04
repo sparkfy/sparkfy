@@ -176,7 +176,11 @@ public class PartitionRpcHandler extends RpcHandler {
             clientFactory.createClient(hostPort.host, hostPort.port).sendRpc(msg, new RpcResponseCallback() {
                 @Override
                 public void onSuccess(ByteBuffer response) {
-                    callback.onSuccess(response);
+                    ByteBuffer copy = ByteBuffer.allocate(response.remaining());
+                    copy.put(response);
+                    // flip "copy" to make it readable
+                    copy.flip();
+                    callback.onSuccess(copy);
                 }
 
                 @Override
