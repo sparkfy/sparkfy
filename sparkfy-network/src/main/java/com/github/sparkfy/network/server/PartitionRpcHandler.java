@@ -162,8 +162,8 @@ public class PartitionRpcHandler extends RpcHandler {
 
     @Override
     public void receive(TransportClient client, ByteBuffer msg, final RpcResponseCallback callback) {
-        startConnectTask(msg);
-        startRecoveryTask(msg);
+        startConnectTask(msg.duplicate());
+        startRecoveryTask(msg.duplicate());
         int partition = getPartition(msg);
         if (partition == -1) {
             throw new RuntimeException("Failed to connect all client(" + Arrays.toString(hostPorts) + ")");
@@ -172,8 +172,12 @@ public class PartitionRpcHandler extends RpcHandler {
         if (hostPort == null) {
             throw new RuntimeException("Partitioned but failed to connect client:" + hostPort.toString());
         }
+        ByteBuffer rcopy = ByteBuffer.allocate(msg.remaining());
+        rcopy.put(msg);
+        // flip "copy" to make it readable
+        rcopy.flip();
         try {
-            clientFactory.createClient(hostPort.host, hostPort.port).sendRpc(msg, new RpcResponseCallback() {
+            clientFactory.createClient(hostPort.host, hostPort.port).sendRpc(rcopy, new RpcResponseCallback() {
                 @Override
                 public void onSuccess(ByteBuffer response) {
                     ByteBuffer copy = ByteBuffer.allocate(response.remaining());
@@ -233,11 +237,11 @@ public class PartitionRpcHandler extends RpcHandler {
         private final ByteBuffer msg;
 
         public ConnectTask(ByteBuffer msg) {
-//            ByteBuffer dmsg = msg.duplicate();
-//            byte[] bytes = new byte[dmsg.remaining()];
-//            dmsg.get(bytes);
-//            this.msg = ByteBuffer.wrap(bytes);
-            this.msg = msg.duplicate();
+            ByteBuffer copy = ByteBuffer.allocate(msg.remaining());
+            copy.put(msg);
+            // flip "copy" to make it readable
+            copy.flip();
+            this.msg = copy;
         }
 
         @Override
@@ -248,11 +252,8 @@ public class PartitionRpcHandler extends RpcHandler {
                 TransportClient client = null;
                 try {
                     client = clientFactory.createClient(hostPort.host, hostPort.port);
-//                    synchronized (client) {
-//                        client.sendRpcSync(msg.duplicate(), timeoutMs);
-//                    }
+                    client.sendRpcSync(msg.duplicate(), timeoutMs);
                 } catch (Exception e) {
-//                    client.close();
                     remove(i);
                     logger.warn("Failed to connect client:" + hostPort.toString(), e);
                 }
@@ -264,11 +265,11 @@ public class PartitionRpcHandler extends RpcHandler {
         private final ByteBuffer msg;
 
         public RecoveryTask(ByteBuffer msg) {
-//            ByteBuffer dmsg = msg.duplicate();
-//            byte[] bytes = new byte[dmsg.remaining()];
-//            dmsg.get(bytes);
-//            this.msg = ByteBuffer.wrap(bytes);
-            this.msg = msg.duplicate();
+            ByteBuffer copy = ByteBuffer.allocate(msg.remaining());
+            copy.put(msg);
+            // flip "copy" to make it readable
+            copy.flip();
+            this.msg = copy;
         }
 
         @Override
@@ -279,14 +280,9 @@ public class PartitionRpcHandler extends RpcHandler {
                 TransportClient client = null;
                 try {
                     client = clientFactory.createClient(hostPort.host, hostPort.port);
-//                    synchronized (client) {
-//                        client.sendRpcSync(msg.duplicate(), timeoutMs);
-//                    }
+                    client.sendRpcSync(msg.duplicate(), timeoutMs);
                     recovery(i);
                 } catch (Exception e) {
-//                    if (client != null) {
-//                        client.close();
-//                    }
                     logger.warn("Failed to connect client:" + hostPort.toString(), e);
                 }
             }
