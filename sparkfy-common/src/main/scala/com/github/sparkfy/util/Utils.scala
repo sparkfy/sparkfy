@@ -169,6 +169,11 @@ object Utils extends Logging {
     }
   }
 
+  /** Return the class name of the given object, removing all dollar signs */
+  def getFormattedClassName(obj: AnyRef): String = {
+    obj.getClass.getSimpleName.replace("$", "")
+  }
+
   def toPath(path: String): String = {
     if (path.endsWith("/")) path else path + "/"
   }

@@ -169,10 +169,10 @@ public class PartitionRpcHandler extends RpcHandler {
         }
         HostPort hostPort = get(partition);
         if (hostPort == null) {
+            logger.warn("Partitioned but failed to connect client:" + hostPort.toString());
             remove(partition);
             responseReliably(msg, callback);
             return;
-//            throw new RuntimeException("Partitioned but failed to connect client:" + hostPort.toString());
         }
         final ByteBuffer rMsg = msg.duplicate();
         try {
@@ -195,7 +195,7 @@ public class PartitionRpcHandler extends RpcHandler {
             });
         } catch (IOException e) {
             remove(partition);
-            throw new RuntimeException("Partitioned but failed to connect client:" + hostPort.toString(), e);
+            logger.warn("Partitioned but failed to connect client:" + hostPort.toString(), e);
         }
     }
 
