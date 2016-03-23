@@ -64,6 +64,15 @@ public class ByteUtils {
     }
 
     /**
+     * @param f float value
+     * @return the float represented as byte []
+     */
+    public static byte[] toBytes(final float f) {
+        // Encode it as int
+        return ByteUtils.toBytes(Float.floatToRawIntBits(f));
+    }
+
+    /**
      * Convert a boolean to a byte array. True becomes -1
      * and false becomes 0.
      *
@@ -368,7 +377,7 @@ public class ByteUtils {
             return "";
         }
         try {
-            return new String(b, off, len,UTF8_ENCODING);
+            return new String(b, off, len, UTF8_ENCODING);
         } catch (UnsupportedEncodingException e) {
             return null;
         }
