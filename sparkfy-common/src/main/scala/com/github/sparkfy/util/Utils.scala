@@ -210,4 +210,59 @@ object Utils extends Logging {
     }
     sb.toString
   }
+
+  def topK[A, B](k: Int, array: Array[A], f: A => B)(implicit ord: Ordering[B]): Array[A] = {
+
+    def adjust(heap: Array[A], index: Int): Unit = {
+
+      if (index < heap.length) {
+        val root = heap(index)
+        val left = index * 2 + 1
+        val right = index * 2 + 2
+        val minChild = min(left, right)
+        if (minChild >= 0) {
+          if (ord.compare(f(root), f(heap(minChild))) > 0) {
+            swap(index, minChild)
+            adjust(heap, minChild)
+          }
+
+        }
+      }
+
+      def swap(i: Int, j: Int) = {
+        val tmp = heap(i)
+        heap(i) = heap(j)
+        heap(j) = tmp
+      }
+
+      def min(left: Int, right: Int): Int = {
+        if (right < heap.length) {
+          if (ord.compare(f(heap(left)), f(heap(right))) > 0) right else left
+        } else if (left >= heap.length) {
+          -1
+        } else {
+          left
+        }
+      }
+    }
+
+    val size = array.size
+    if (size <= k) array.sortBy(f)(ord.reverse)
+    else {
+      val heap = array.take(k)
+      for (i <- (0 until k / 2).reverse) {
+        adjust(heap, i)
+      }
+      for (i <- k until size) {
+        if (ord.compare(f(heap(0)), f(array(i))) < 0) {
+          heap(0) = array(i)
+          adjust(heap, 0)
+        }
+      }
+      heap.sortBy(f)(ord.reverse)
+    }
+
+
+  }
+
 }

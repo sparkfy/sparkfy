@@ -16,7 +16,8 @@ trait CacheFactory {
 object CacheFactory {
 
   val cacheNames = Map(
-    "guava" -> "com.github.sparkfy.cache.guava.GuavaCacheFactory")
+    "guava" -> "com.github.sparkfy.cache.guava.GuavaCacheFactory",
+    "none" -> "com.github.sparkfy.cache.NoneCacheFactory")
 
   def getCacheFactory(conf: Map[String, String]): CacheFactory = {
 
